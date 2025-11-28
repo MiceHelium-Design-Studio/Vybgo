@@ -1,14 +1,14 @@
 -- SQL to insert admin user into Supabase PostgreSQL
 -- Run this in Supabase SQL Editor after running supabase-schema.sql
 
-INSERT INTO "User" (
-  id, 
-  email, 
-  name, 
-  "passwordHash", 
-  "isAdmin",
-  "createdAt", 
-  "updatedAt"
+INSERT INTO users (
+  id,
+  email,
+  name,
+  password_hash,
+  is_admin,
+  created_at,
+  updated_at
 ) VALUES (
   'e3037b9e-4be4-458b-90fb-09cdcfb62b3b'::uuid,
   'raghidhilal@gmail.com',
@@ -17,8 +17,8 @@ INSERT INTO "User" (
   true,
   NOW(),
   NOW()
-) ON CONFLICT (email) DO UPDATE SET 
+) ON CONFLICT (email) DO UPDATE SET
   name = EXCLUDED.name,
-  "passwordHash" = EXCLUDED."passwordHash",
-  "isAdmin" = COALESCE(EXCLUDED."isAdmin", "User"."isAdmin"),
-  "updatedAt" = NOW();
+  password_hash = EXCLUDED.password_hash,
+  is_admin = COALESCE(EXCLUDED.is_admin, users.is_admin),
+  updated_at = NOW();

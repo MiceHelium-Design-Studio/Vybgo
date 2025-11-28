@@ -1,8 +1,9 @@
 import express from 'express';
-import { VibeType, RideStatus } from '@prisma/client';
 import prisma from '../prisma';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { simulateRideLifecycle, stopRideSimulation } from '../services/simulationService';
+import { fcmService } from '../services/fcmService';
+import { VibeTypeValues, RideStatusValues } from '../types/prismaCompat';
 
 const router = express.Router();
 
@@ -51,7 +52,7 @@ router.post('/', async (req: AuthRequest, res, next) => {
     }
 
     // Validate vibe
-    const validVibes = Object.values(VibeType);
+    const validVibes = VibeTypeValues;
     if (!validVibes.includes(vibe)) {
       return res.status(400).json({ error: 'Invalid vibe type' });
     }
@@ -61,8 +62,8 @@ router.post('/', async (req: AuthRequest, res, next) => {
         userId: userId!,
         pickup,
         dropoff,
-        vibe: vibe as VibeType,
-        status: RideStatus.PENDING,
+        vibe: vibe as any,
+        status: 'PENDING' as any,
       },
       include: {
         user: {
@@ -128,7 +129,7 @@ router.patch('/:id/status', async (req: AuthRequest, res, next) => {
     }
 
     // Validate status
-    const validStatuses = Object.values(RideStatus);
+    const validStatuses = RideStatusValues;
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
@@ -146,7 +147,7 @@ router.patch('/:id/status', async (req: AuthRequest, res, next) => {
 
     const updatedRide = await prisma.ride.update({
       where: { id },
-      data: { status: status as RideStatus },
+      data: { status: status as any },
       include: {
         user: {
           select: {
@@ -159,11 +160,47 @@ router.patch('/:id/status', async (req: AuthRequest, res, next) => {
     });
 
     // Stop simulation if ride is cancelled or completed
-    if (status === RideStatus.CANCELLED || status === RideStatus.COMPLETED) {
+    if (status === 'CANCELLED' || status === 'COMPLETED') {
       stopRideSimulation(id);
     }
 
     res.json(updatedRide);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Admin: Send test push notification (for development/testing)
+router.post('/admin/test-push', async (req: AuthRequest, res, next) => {
+  try {
+    const { rideId, status } = req.body;
+    const userId = req.userId;
+
+    // Get user's FCM token
+    const user = await prisma.user.findUnique({
+      where: { id: userId! },
+      select: { fcmToken: true, name: true },
+    });
+
+    if (!user || !user.fcmToken) {
+      return res.status(400).json({
+        error: 'No FCM token found for this user. Register device first.',
+      });
+    }
+
+    // Send test push
+    const result = await fcmService.sendRideNotification(
+      user.fcmToken,
+      rideId || 'test-ride-123',
+      status || 'accepted',
+      'Test Driver'
+    );
+
+    res.json({
+      message: 'Test push sent',
+      result,
+      note: 'Check your device for notification (might be in background)',
+    });
   } catch (error) {
     next(error);
   }

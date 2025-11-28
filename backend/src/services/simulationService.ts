@@ -1,5 +1,5 @@
-import { RideStatus } from '@prisma/client';
 import prisma from '../prisma';
+import { RideStatusValues } from '../types/prismaCompat';
 
 // Store active timers to allow cancellation if needed
 const activeTimers = new Map<string, NodeJS.Timeout[]>();
@@ -7,7 +7,7 @@ const activeTimers = new Map<string, NodeJS.Timeout[]>();
 /**
  * Update ride status in the database
  */
-async function updateRideStatus(rideId: string, status: RideStatus): Promise<void> {
+async function updateRideStatus(rideId: string, status: string): Promise<void> {
   try {
     // Check if ride still exists and is not already completed/cancelled
     const ride = await prisma.ride.findUnique({
@@ -21,7 +21,7 @@ async function updateRideStatus(rideId: string, status: RideStatus): Promise<voi
     }
 
     // Don't update if ride is already completed or cancelled
-    if (ride.status === RideStatus.COMPLETED || ride.status === RideStatus.CANCELLED) {
+    if (ride.status === 'COMPLETED' || ride.status === 'CANCELLED') {
       console.log(`Ride ${rideId} is already ${ride.status}, stopping simulation`);
       // Clear any remaining timers
       clearTimers(rideId);
@@ -37,7 +37,7 @@ async function updateRideStatus(rideId: string, status: RideStatus): Promise<voi
     console.log(`✅ Ride ${rideId} status updated to ${status}`);
 
     // If completed, clear timers
-    if (status === RideStatus.COMPLETED) {
+    if (status === 'COMPLETED') {
       clearTimers(rideId);
     }
   } catch (error) {
@@ -69,19 +69,19 @@ export function simulateRideLifecycle(rideId: string): void {
 
   // After 5 seconds: ACCEPTED
   const timer1 = setTimeout(async () => {
-    await updateRideStatus(rideId, RideStatus.ACCEPTED);
+    await updateRideStatus(rideId, 'ACCEPTED');
   }, 5000);
   timers.push(timer1);
 
   // After 15 seconds: IN_PROGRESS
   const timer2 = setTimeout(async () => {
-    await updateRideStatus(rideId, RideStatus.IN_PROGRESS);
+    await updateRideStatus(rideId, 'IN_PROGRESS');
   }, 15000);
   timers.push(timer2);
 
   // After 30 seconds: COMPLETED
   const timer3 = setTimeout(async () => {
-    await updateRideStatus(rideId, RideStatus.COMPLETED);
+    await updateRideStatus(rideId, 'COMPLETED');
     // Clear timers after completion
     clearTimers(rideId);
   }, 30000);

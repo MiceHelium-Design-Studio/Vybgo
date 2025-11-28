@@ -1,35 +1,21 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
-enum VibeType {
-  CHILL
-  PARTY
-  FOCUS
-  ROMANTIC
-}
-
-enum RideStatus {
-  PENDING
-  ACCEPTED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
+// NOTE: SQLite in this temporary schema does not support Prisma enums the
+// same way PostgreSQL does. For local testing we store those enum values as
+// plain strings and use documented constant values in the application.
 
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   phone     String?  @unique
+  isAdmin   Boolean  @default(false)
   password  String
   name      String?
   fcmToken  String?  // Firebase Cloud Messaging token for push notifications
@@ -55,8 +41,8 @@ model Ride {
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   pickup      String
   dropoff     String
-  vibe        VibeType
-  status      RideStatus @default(PENDING)
+  vibe        String
+  status      String     @default("PENDING")
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   drive       Drive?
@@ -66,10 +52,10 @@ model Ride {
 model Drive {
   id          String     @id @default(uuid())
   driverId    String
-  rideId      String     @unique
+  rideId      String @unique
   driver      Driver     @relation(fields: [driverId], references: [id], onDelete: Cascade)
   ride        Ride       @relation(fields: [rideId], references: [id], onDelete: Cascade)
-  status      RideStatus @default(PENDING)
+  status      String     @default("PENDING")
   startedAt   DateTime?
   completedAt DateTime?
   createdAt   DateTime   @default(now())
@@ -81,7 +67,7 @@ model MusicTrack {
   id        String   @id @default(uuid())
   title     String
   artist    String?
-  vibe      VibeType
+  vibe      String
   audioUrl  String
   duration  Int?
   rideId    String?
@@ -94,6 +80,3 @@ model MusicTrack {
   @@index([rideId])
   @@index([driveId])
 }
-
-
-

@@ -1,0 +1,20 @@
+services:
+  vybgo-backend:
+    image: vybgo-backend:latest
+    container_name: vybgo-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3000
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - vybgo-network
+
+networks:
+  vybgo-network:
+    driver: bridge
+
