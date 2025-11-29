@@ -9,16 +9,9 @@ Follow these steps to get the VYBGO app running locally.
 - Flutter SDK (v3.0 or higher)
 - Git
 
-## Step 1: Database Setup
+## Step 1: Backend Setup (Quick Start with SQLite)
 
-1. Create a PostgreSQL database:
-```sql
-CREATE DATABASE vybgo;
-```
-
-2. Note your database connection details (host, port, username, password)
-
-## Step 2: Backend Setup
+The fastest way to run the backend locally is using the included SQLite database:
 
 1. Navigate to backend directory:
 ```bash
@@ -30,7 +23,40 @@ cd backend
 npm install
 ```
 
-3. Create `.env` file:
+3. Run the development script (uses SQLite, no PostgreSQL needed):
+```bash
+# On Linux/Mac, you may need to make the script executable first:
+chmod +x ./scripts/run-dev.sh
+
+./scripts/run-dev.sh
+```
+
+You should see: `🚗 VYBGO API server running on port 3001` (port is configured in `.env.development`)
+
+The API will be available at `http://localhost:3001`
+
+## Step 1b: Backend Setup (PostgreSQL for Production)
+
+For production or if you prefer PostgreSQL:
+
+1. Create a PostgreSQL database:
+```sql
+CREATE DATABASE vybgo;
+```
+
+2. Note your database connection details (host, port, username, password)
+
+3. Navigate to backend directory:
+```bash
+cd backend
+```
+
+4. Install dependencies:
+```bash
+npm install
+```
+
+5. Create `.env` file:
 ```bash
 # Copy the example (or create manually)
 # On Windows PowerShell:
@@ -40,31 +66,31 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-4. Edit `.env` with your database credentials:
+6. Edit `.env` with your database credentials:
 ```
 DATABASE_URL="postgresql://username:password@localhost:5432/vybgo?schema=public"
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production-min-32-chars"
 PORT=3000
 ```
 
-5. Generate Prisma client:
+7. Generate Prisma client:
 ```bash
 npm run prisma:generate
 ```
 
-6. Run database migrations:
+8. Run database migrations:
 ```bash
 npm run prisma:migrate
 ```
 
-7. Start the backend server:
+9. Start the backend server:
 ```bash
 npm run dev
 ```
 
 You should see: `🚗 VYBGO API server running on port 3000`
 
-## Step 3: Mobile App Setup
+## Step 2: Mobile App Setup
 
 1. Navigate to mobile directory:
 ```bash
@@ -78,12 +104,22 @@ flutter pub get
 
 3. Update API base URL in `lib/services/api_service.dart`:
 
-   **For Android Emulator:**
+   **For Android Emulator (SQLite dev mode on port 3001):**
+   ```dart
+   static const String baseUrl = 'http://10.0.2.2:3001/api';
+   ```
+
+   **For Android Emulator (PostgreSQL on port 3000):**
    ```dart
    static const String baseUrl = 'http://10.0.2.2:3000/api';
    ```
 
-   **For iOS Simulator:**
+   **For iOS Simulator (SQLite dev mode on port 3001):**
+   ```dart
+   static const String baseUrl = 'http://localhost:3001/api';
+   ```
+
+   **For iOS Simulator (PostgreSQL on port 3000):**
    ```dart
    static const String baseUrl = 'http://localhost:3000/api';
    ```
@@ -92,9 +128,9 @@ flutter pub get
    - Find your computer's IP address:
      - Windows: `ipconfig` (look for IPv4 Address)
      - Mac/Linux: `ifconfig` or `ip addr`
-   - Update the URL:
+   - Update the URL (use port 3001 for SQLite dev mode, 3000 for PostgreSQL):
      ```dart
-     static const String baseUrl = 'http://YOUR_IP_ADDRESS:3000/api';
+     static const String baseUrl = 'http://YOUR_IP_ADDRESS:3001/api';
      ```
 
 4. Run the app:
@@ -102,7 +138,7 @@ flutter pub get
 flutter run
 ```
 
-## Step 4: Test the App
+## Step 3: Test the App
 
 1. Register a new account in the app
 2. Login with your credentials
